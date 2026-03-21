@@ -26,7 +26,7 @@ We follow a **feature-branch + pull request workflow**:
 
 ---
 
-# Environment Setup
+## Environment Setup
 
 ## 1. Creating a Virtual Environment
 
