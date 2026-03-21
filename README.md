@@ -5,9 +5,15 @@
 
 ## Development Workflow
 
-We follow a **feature-branch + pull request workflow**:
+We follow a **feature-branch + pull request workflow** with issue-based development:
 
-1. **Branching**
+1. **Issues**
+   - Create a new GitHub Issue describing the task or feature.
+   - Assign it to yourself or a team member.
+   - Include a clear description, acceptance criteria, and priority.
+
+2. **Branching**
+   - Create a feature branch **from the issue**:
    - `main` – stable, production-ready code
    - `develop` – integration branch for feature branches
    - Feature branches: `feature/xxx` for any new feature or notebook
@@ -23,6 +29,12 @@ We follow a **feature-branch + pull request workflow**:
 4. **Merging**
    - Merge PRs only after code review and successful checks
    - Use `rebase and merge` to maintain linear history
+
+### **Summary:** 
+
+Start with an issue → create a branch from the issue → work → PR → review → merge. 
+
+This ensures traceability, clean history, and quality control.
 
 ---
 
