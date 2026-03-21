@@ -26,13 +26,23 @@ def load_and_validate_data(filepath: str, sep: str = '\t', columns=None, encodin
         If the loaded dataset is empty.
     """
     # Load the data
-    df = pd.read_csv(filepath, sep=sep, names=columns, encoding=encoding, engine='python')
+    try:
+        df = pd.read_csv(
+            filepath,
+            sep=sep,
+            names=columns,
+            encoding=encoding,
+            engine='python',
+            on_bad_lines='skip'
+        )
+    except Exception as e:
+        raise RuntimeError(f"Error loading {filepath}: {e}")
     
     # Check if dataset is empty
     if df.empty:
         raise ValueError("Dataset is empty")
     
-    print(f"Loaded {len(df)} rows and {df.shape[1]} columns")
+    print(f"{filepath} \n Loaded {len(df)} rows and {df.shape[1]} columns")
     
     # Check for missing values
     missing = df.isnull().sum()
@@ -45,6 +55,6 @@ def load_and_validate_data(filepath: str, sep: str = '\t', columns=None, encodin
     
     # Check for duplicate rows
     duplicate_count = df.duplicated().sum()
-    print(f"Number of duplicate rows: {duplicate_count}")
+    print(f"Number of duplicate rows: {duplicate_count} \n")
     
     return df
