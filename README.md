@@ -33,3 +33,12 @@ We follow a **feature-branch + pull request workflow**:
 - https://code.visualstudio.com/docs/python/environments
 - https://realpython.com/python-virtual-environments-a-primer/
 - https://docs.python.org/3/library/venv.html
+
+## 2. Activate the Environment
+
+- Your terminal prompt should show (.venv) indicating the environment is active.
+- Packages installed now will only affect this environment.
+
+## 3. Install Dependencies
+
+```pip install -r requirements.txt```
