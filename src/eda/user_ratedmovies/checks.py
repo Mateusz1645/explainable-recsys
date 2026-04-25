@@ -136,8 +136,20 @@ def ratings_activity_report(user_ratedmovies: pd.DataFrame) -> dict[str, pd.Data
 
     summary = pd.DataFrame(
         {
-            "metric": ["users", "movies", "interactions", "sparsity", "density"],
-            "value": [int(users), int(movies), int(interactions), round(float(sparsity), 6), round(float(1 - sparsity), 6)],
+            "metric": [
+                "users",
+                "movies",
+                "interactions",
+                "sparsity",
+                "densitsy",
+            ],
+            "value": [
+                int(users),
+                int(movies),
+                int(interactions),
+                round(float(sparsity), 6),
+                round(float(1 - sparsity), 6),
+            ],
         }
     )
 
