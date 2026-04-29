@@ -317,6 +317,11 @@ def build_movie_metadata_features(movies_df: pd.DataFrame) -> pd.DataFrame:
 
     df["movie_has_rt_data"] = df["rtID"].notna().astype(int)
 
+    # Force RT columns to numeric — stored as strings in raw HetRec data
+    for _col in ["rtAllCriticsRating", "rtAllCriticsScore",
+                 "rtAudienceRating", "rtAudienceScore"]:
+        df[_col] = pd.to_numeric(df[_col], errors="coerce")
+
     df = df.rename(
         columns={
             "rtAllCriticsRating": "movie_rt_critics_rating",
