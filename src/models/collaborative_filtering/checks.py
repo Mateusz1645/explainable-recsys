@@ -56,11 +56,7 @@ class SVDCollaborativeFiltering:
         Reproducibility seed.
     """
 
-    def __init__(
-        self,
-        n_factors=50,
-        random_state=42
-    ):
+    def __init__(self, n_factors=50, random_state=42):
         self.n_factors = n_factors
         self.random_state = random_state
 
@@ -89,32 +85,21 @@ class SVDCollaborativeFiltering:
 
         print("Step 1: Building user-item matrix...")
 
-        required_cols = [
-            "userID",
-            "movieID",
-            "interaction_rating"
-        ]
+        required_cols = ["userID", "movieID", "interaction_rating"]
 
         for col in required_cols:
             if col not in interactions_df.columns:
-                raise ValueError(
-                    f"Missing required column: {col}"
-                )
+                raise ValueError(f"Missing required column: {col}")
 
         self.train_df = interactions_df.copy()
 
         # Create pivot table
 
         self.user_item_matrix = interactions_df.pivot_table(
-            index="userID",
-            columns="movieID",
-            values="interaction_rating"
+            index="userID", columns="movieID", values="interaction_rating"
         )
 
-        print(
-            f"User-item matrix shape: "
-            f"{self.user_item_matrix.shape}"
-        )
+        print(f"User-item matrix shape: {self.user_item_matrix.shape}")
 
         # Mean-centering
 
@@ -122,31 +107,19 @@ class SVDCollaborativeFiltering:
 
         self.user_means = self.user_item_matrix.mean(axis=1)
 
-        matrix_demeaned = (
-            self.user_item_matrix
-            .sub(self.user_means, axis=0)
-            .fillna(0)
-        )
+        matrix_demeaned = self.user_item_matrix.sub(self.user_means, axis=0).fillna(0)
 
         # Sparse matrix conversion
 
         print("Step 3: Converting to sparse matrix...")
 
-        sparse_matrix = csr_matrix(
-            matrix_demeaned.values
-        )
+        sparse_matrix = csr_matrix(matrix_demeaned.values)
 
         # Truncated SVD
 
-        print(
-            f"Step 4: Running truncated SVD "
-            f"with k={self.n_factors}..."
-        )
+        print(f"Step 4: Running truncated SVD with k={self.n_factors}...")
 
-        U, sigma, Vt = svds(
-            sparse_matrix,
-            k=self.n_factors
-        )
+        U, sigma, Vt = svds(sparse_matrix, k=self.n_factors)
 
         sigma = np.diag(sigma)
 
@@ -156,18 +129,10 @@ class SVDCollaborativeFiltering:
 
         print("Step 5: Reconstructing predictions...")
 
-        reconstructed = (
-            np.dot(
-                np.dot(U, sigma),
-                Vt
-            )
-            + self.user_means.values.reshape(-1, 1)
-        )
+        reconstructed = np.dot(np.dot(U, sigma), Vt) + self.user_means.values.reshape(-1, 1)
 
         self.predictions_df = pd.DataFrame(
-            reconstructed,
-            index=self.user_item_matrix.index,
-            columns=self.user_item_matrix.columns
+            reconstructed, index=self.user_item_matrix.index, columns=self.user_item_matrix.columns
         )
 
         print("Prediction matrix created successfully.")
@@ -197,9 +162,7 @@ class SVDCollaborativeFiltering:
         """
 
         if self.predictions_df is None:
-            raise ValueError(
-                "Model must be fitted first."
-            )
+            raise ValueError("Model must be fitted first.")
 
         if user_id not in self.predictions_df.index:
             return np.nan
@@ -207,16 +170,9 @@ class SVDCollaborativeFiltering:
         if movie_id not in self.predictions_df.columns:
             return np.nan
 
-        prediction = self.predictions_df.loc[
-            user_id,
-            movie_id
-        ]
+        prediction = self.predictions_df.loc[user_id, movie_id]
 
-        prediction = np.clip(
-            prediction,
-            0.5,
-            5.0
-        )
+        prediction = np.clip(prediction, 0.5, 5.0)
 
         prediction = round(prediction * 2) / 2
 
@@ -241,10 +197,7 @@ class SVDCollaborativeFiltering:
         actuals = []
 
         for row in test_df.itertuples():
-            pred = self.predict_rating(
-                row.userID,
-                row.movieID
-            )
+            pred = self.predict_rating(row.userID, row.movieID)
 
             if not np.isnan(pred):
                 predictions.append(pred)
@@ -253,30 +206,17 @@ class SVDCollaborativeFiltering:
         predictions = np.array(predictions)
         actuals = np.array(actuals)
 
-        rmse = np.sqrt(
-            np.mean((actuals - predictions) ** 2)
-        )
+        rmse = np.sqrt(np.mean((actuals - predictions) ** 2))
 
-        mae = np.mean(
-            np.abs(actuals - predictions)
-        )
+        mae = np.mean(np.abs(actuals - predictions))
 
-        results = {
-            "RMSE": rmse,
-            "MAE": mae,
-            "Evaluated_Interactions": len(actuals)
-        }
+        results = {"RMSE": rmse, "MAE": mae, "Evaluated_Interactions": len(actuals)}
 
         print(results)
 
         return results
 
-    def recommend(
-        self,
-        user_id,
-        movies_metadata_df,
-        top_n=10
-    ):
+    def recommend(self, user_id, movies_metadata_df, top_n=10):
         """
         Generate Top-N personalized recommendations.
 
@@ -297,57 +237,25 @@ class SVDCollaborativeFiltering:
         """
 
         if self.predictions_df is None:
-            raise ValueError(
-                "Model must be fitted first."
-            )
+            raise ValueError("Model must be fitted first.")
 
         if user_id not in self.predictions_df.index:
-            raise ValueError(
-                f"User {user_id} not found."
-            )
+            raise ValueError(f"User {user_id} not found.")
 
-        rated_movies = set(
-            self.train_df[
-                self.train_df["userID"] == user_id
-            ]["movieID"].unique()
-        )
+        rated_movies = set(self.train_df[self.train_df["userID"] == user_id]["movieID"].unique())
 
         user_predictions = (
-            self.predictions_df
-            .loc[user_id]
-            .drop(
-                labels=rated_movies,
-                errors="ignore"
-            )
+            self.predictions_df.loc[user_id]
+            .drop(labels=rated_movies, errors="ignore")
             .sort_values(ascending=False)
             .reset_index()
         )
 
-        user_predictions.columns = [
-            "movieID",
-            "predicted_rating"
-        ]
+        user_predictions.columns = ["movieID", "predicted_rating"]
 
-        recommendations = (
-            user_predictions
-            .merge(
-                movies_metadata_df,
-                on="movieID",
-                how="left"
-            )
-            .head(top_n)
-        )
+        recommendations = user_predictions.merge(movies_metadata_df, on="movieID", how="left").head(top_n)
 
-        return recommendations[
-            [
-                "movieID",
-                "title",
-                "predicted_rating"
-            ]
-        ]
-    
-
-
+        return recommendations[["movieID", "title", "predicted_rating"]]
 
 
 class SGDMatrixFactorization:
@@ -462,7 +370,7 @@ class SGDMatrixFactorization:
         epochs: int = 20,
         rating_min: float = 0.5,
         rating_max: float = 5.0,
-        random_state: int = 42
+        random_state: int = 42,
     ):
         self.n_factors = n_factors
         self.lr = learning_rate
@@ -507,11 +415,7 @@ class SGDMatrixFactorization:
 
         print("Step 1: Preparing training data...")
 
-        required_cols = [
-            "userID",
-            "movieID",
-            "interaction_rating"
-        ]
+        required_cols = ["userID", "movieID", "interaction_rating"]
 
         for col in required_cols:
             if col not in interactions_df.columns:
@@ -524,20 +428,11 @@ class SGDMatrixFactorization:
         unique_users = interactions_df["userID"].unique()
         unique_movies = interactions_df["movieID"].unique()
 
-        self.user_to_idx = {
-            user: idx
-            for idx, user in enumerate(unique_users)
-        }
+        self.user_to_idx = {user: idx for idx, user in enumerate(unique_users)}
 
-        self.movie_to_idx = {
-            movie: idx
-            for idx, movie in enumerate(unique_movies)
-        }
+        self.movie_to_idx = {movie: idx for idx, movie in enumerate(unique_movies)}
 
-        self.idx_to_movie = {
-            idx: movie
-            for movie, idx in self.movie_to_idx.items()
-        }
+        self.idx_to_movie = {idx: movie for movie, idx in self.movie_to_idx.items()}
 
         n_users = len(unique_users)
         n_movies = len(unique_movies)
@@ -549,51 +444,32 @@ class SGDMatrixFactorization:
 
         print("Step 2: Initializing latent factors...")
 
-        self.global_mean = interactions_df[
-            "interaction_rating"
-        ].mean()
+        self.global_mean = interactions_df["interaction_rating"].mean()
 
         rng = np.random.RandomState(self.random_state)
 
         init_scale = np.sqrt(1 / self.n_factors)
 
-        self.user_factors = rng.normal(
-            scale=init_scale,
-            size=(n_users, self.n_factors)
-        )
+        self.user_factors = rng.normal(scale=init_scale, size=(n_users, self.n_factors))
 
-        self.movie_factors = rng.normal(
-            scale=init_scale,
-            size=(n_movies, self.n_factors)
-        )
+        self.movie_factors = rng.normal(scale=init_scale, size=(n_movies, self.n_factors))
 
         self.user_biases = np.zeros(n_users)
         self.movie_biases = np.zeros(n_movies)
 
         # Prepare samples for SGD
 
-        user_idx = interactions_df["userID"].map(
-            self.user_to_idx
-        ).values
+        user_idx = interactions_df["userID"].map(self.user_to_idx).values
 
-        movie_idx = interactions_df["movieID"].map(
-            self.movie_to_idx
-        ).values
+        movie_idx = interactions_df["movieID"].map(self.movie_to_idx).values
 
-        ratings = interactions_df[
-            "interaction_rating"
-        ].values
+        ratings = interactions_df["interaction_rating"].values
 
-        samples = list(
-            zip(user_idx, movie_idx, ratings)
-        )
+        samples = list(zip(user_idx, movie_idx, ratings))
 
         # Training loop
 
-        print(
-            f"Step 3: Training model "
-            f"for {self.epochs} epochs..."
-        )
+        print(f"Step 3: Training model for {self.epochs} epochs...")
 
         for epoch in range(self.epochs):
             np.random.shuffle(samples)
@@ -601,67 +477,37 @@ class SGDMatrixFactorization:
             squared_error = 0.0
 
             for u, i, r_true in samples:
-
                 # Prediction
-                dot_product = np.dot(
-                    self.user_factors[u],
-                    self.movie_factors[i]
-                )
+                dot_product = np.dot(self.user_factors[u], self.movie_factors[i])
 
-                r_pred = (
-                    self.global_mean
-                    + self.user_biases[u]
-                    + self.movie_biases[i]
-                    + dot_product
-                )
+                r_pred = self.global_mean + self.user_biases[u] + self.movie_biases[i] + dot_product
 
                 # Error
                 error = r_true - r_pred
-                squared_error += error ** 2
+                squared_error += error**2
 
                 # Update biases
-                self.user_biases[u] += self.lr * (
-                    error
-                    - self.reg * self.user_biases[u]
-                )
+                self.user_biases[u] += self.lr * (error - self.reg * self.user_biases[u])
 
-                self.movie_biases[i] += self.lr * (
-                    error
-                    - self.reg * self.movie_biases[i]
-                )
+                self.movie_biases[i] += self.lr * (error - self.reg * self.movie_biases[i])
 
                 # Update latent factors
                 old_user_vector = self.user_factors[u].copy()
 
-                self.user_factors[u] += self.lr * (
-                    error * self.movie_factors[i]
-                    - self.reg * self.user_factors[u]
-                )
+                self.user_factors[u] += self.lr * (error * self.movie_factors[i] - self.reg * self.user_factors[u])
 
-                self.movie_factors[i] += self.lr * (
-                    error * old_user_vector
-                    - self.reg * self.movie_factors[i]
-                )
+                self.movie_factors[i] += self.lr * (error * old_user_vector - self.reg * self.movie_factors[i])
 
-            rmse = np.sqrt(
-                squared_error / len(samples)
-            )
+            rmse = np.sqrt(squared_error / len(samples))
 
             if epoch == 0 or (epoch + 1) % 5 == 0:
-                print(
-                    f"Epoch {epoch + 1:02d}/{self.epochs} "
-                    f"| Training RMSE: {rmse:.4f}"
-                )
+                print(f"Epoch {epoch + 1:02d}/{self.epochs} | Training RMSE: {rmse:.4f}")
 
         print("Training completed successfully.")
 
         return self
 
-    def predict_rating(
-        self,
-        user_id: Any,
-        movie_id: Any
-    ) -> float:
+    def predict_rating(self, user_id: Any, movie_id: Any) -> float:
         """
         Predict rating for a single user-movie pair.
 
@@ -680,10 +526,7 @@ class SGDMatrixFactorization:
         float
         """
 
-        if (
-            user_id not in self.user_to_idx
-            or movie_id not in self.movie_to_idx
-        ):
+        if user_id not in self.user_to_idx or movie_id not in self.movie_to_idx:
             return self.global_mean
 
         u = self.user_to_idx[user_id]
@@ -693,24 +536,14 @@ class SGDMatrixFactorization:
             self.global_mean
             + self.user_biases[u]
             + self.movie_biases[i]
-            + np.dot(
-                self.user_factors[u],
-                self.movie_factors[i]
-            )
+            + np.dot(self.user_factors[u], self.movie_factors[i])
         )
 
-        prediction = np.clip(
-            prediction,
-            self.rating_min,
-            self.rating_max
-        )
+        prediction = np.clip(prediction, self.rating_min, self.rating_max)
 
         return float(prediction)
 
-    def evaluate(
-        self,
-        test_df: pd.DataFrame
-    ) -> dict:
+    def evaluate(self, test_df: pd.DataFrame) -> dict:
         """
         Evaluate model performance on test set.
 
@@ -734,38 +567,22 @@ class SGDMatrixFactorization:
         y_pred = []
 
         for row in test_df.itertuples():
-            pred = self.predict_rating(
-                user_id=row.userID,
-                movie_id=row.movieID
-            )
+            pred = self.predict_rating(user_id=row.userID, movie_id=row.movieID)
 
             y_true.append(row.interaction_rating)
             y_pred.append(pred)
 
-        rmse = np.sqrt(
-            mean_squared_error(y_true, y_pred)
-        )
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
 
-        mae = mean_absolute_error(
-            y_true,
-            y_pred
-        )
+        mae = mean_absolute_error(y_true, y_pred)
 
-        results = {
-            "RMSE": round(rmse, 4),
-            "MAE": round(mae, 4)
-        }
+        results = {"RMSE": round(rmse, 4), "MAE": round(mae, 4)}
 
         print(results)
 
         return results
 
-    def recommend(
-        self,
-        user_id: Any,
-        movies_metadata_df: pd.DataFrame,
-        top_n: int = 10
-    ) -> pd.DataFrame:
+    def recommend(self, user_id: Any, movies_metadata_df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
         """
         Generate Top-N personalized recommendations.
 
@@ -789,62 +606,26 @@ class SGDMatrixFactorization:
         """
 
         if user_id not in self.user_to_idx:
-            raise ValueError(
-                f"User {user_id} not found."
-            )
+            raise ValueError(f"User {user_id} not found.")
 
-        seen_movies = set(
-            self.train_df[
-                self.train_df["userID"] == user_id
-            ]["movieID"].unique()
-        )
+        seen_movies = set(self.train_df[self.train_df["userID"] == user_id]["movieID"].unique())
 
-        candidate_movies = [
-            movie_id
-            for movie_id in self.movie_to_idx.keys()
-            if movie_id not in seen_movies
-        ]
+        candidate_movies = [movie_id for movie_id in self.movie_to_idx.keys() if movie_id not in seen_movies]
 
         predictions = []
 
         for movie_id in candidate_movies:
-            pred = self.predict_rating(
-                user_id,
-                movie_id
-            )
+            pred = self.predict_rating(user_id, movie_id)
 
-            predictions.append(
-                (movie_id, pred)
-            )
+            predictions.append((movie_id, pred))
 
-        recommendations = pd.DataFrame(
-            predictions,
-            columns=[
-                "movieID",
-                "predicted_rating"
-            ]
-        )
+        recommendations = pd.DataFrame(predictions, columns=["movieID", "predicted_rating"])
 
         recommendations = (
-            recommendations
-            .merge(
-                movies_metadata_df,
-                on="movieID",
-                how="left"
-            )
-            .sort_values(
-                by="predicted_rating",
-                ascending=False
-            )
+            recommendations.merge(movies_metadata_df, on="movieID", how="left")
+            .sort_values(by="predicted_rating", ascending=False)
             .head(top_n)
             .reset_index(drop=True)
         )
 
-        return recommendations[
-            [
-                "movieID",
-                "title",
-                "predicted_rating"
-            ]
-        ]
-
+        return recommendations[["movieID", "title", "predicted_rating"]]

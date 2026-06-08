@@ -1,6 +1,3 @@
 from .checks import PopularityRecommender
 
-__all__ = [
-    "PopularityRecommender"
-]
-
+__all__ = ["PopularityRecommender"]

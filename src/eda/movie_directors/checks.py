@@ -95,10 +95,7 @@ def movies_per_director_report(movie_directors: pd.DataFrame) -> dict[str, pd.Da
     movies_per_director = dedup.groupby("directorID").size().rename("movies_per_director")
 
     director_names = (
-        dedup[["directorID", "directorName"]]
-        .dropna()
-        .drop_duplicates(subset=["directorID"])
-        .set_index("directorID")
+        dedup[["directorID", "directorName"]].dropna().drop_duplicates(subset=["directorID"]).set_index("directorID")
     )
 
     summary = pd.DataFrame(
@@ -117,11 +114,7 @@ def movies_per_director_report(movie_directors: pd.DataFrame) -> dict[str, pd.Da
     )
 
     top_directors = (
-        movies_per_director
-        .sort_values(ascending=False)
-        .head(20)
-        .to_frame()
-        .join(director_names, how="left")
+        movies_per_director.sort_values(ascending=False).head(20).to_frame().join(director_names, how="left")
     )
     return {
         "summary": summary,

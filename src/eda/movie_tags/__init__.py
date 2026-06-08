@@ -1,9 +1,9 @@
 from .checks import (
-                     movie_tags_coverage_report,
-                     movies_per_tag_report,
-                     suspicious_movie_tags_report,
-                     tag_weight_report,
-                     tags_per_movie_report,
+    movie_tags_coverage_report,
+    movies_per_tag_report,
+    suspicious_movie_tags_report,
+    tag_weight_report,
+    tags_per_movie_report,
 )
 
 __all__ = [

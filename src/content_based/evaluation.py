@@ -1,4 +1,5 @@
 """Evaluation metrics for the content-based recommender."""
+
 import numpy as np
 import pandas as pd
 
@@ -26,17 +27,11 @@ def precision_at_k(
     test_ids = set(liked[-n_test:])
     train_ids = liked[:-n_test]
 
-    train_idx = movie_profiles.index[
-        movie_profiles["movieID"].isin(train_ids)
-    ].tolist()
+    train_idx = movie_profiles.index[movie_profiles["movieID"].isin(train_ids)].tolist()
     if not train_idx:
         return None
 
-    test_movie_ids = set(
-        movie_profiles.loc[
-            movie_profiles["movieID"].isin(test_ids), "movieID"
-        ].tolist()
-    )
+    test_movie_ids = set(movie_profiles.loc[movie_profiles["movieID"].isin(test_ids), "movieID"].tolist())
     seen_ids = set(ratings.loc[ratings["userID"] == user_id, "movieID"].tolist())
 
     profile = embeddings[train_idx].mean(axis=0)
@@ -46,9 +41,7 @@ def precision_at_k(
     seen_mask = movie_profiles["movieID"].isin(seen_ids).values
     scores[seen_mask] = -1.0
 
-    top_k_movie_ids = set(
-        movie_profiles.iloc[np.argsort(scores)[::-1][:k]]["movieID"].tolist()
-    )
+    top_k_movie_ids = set(movie_profiles.iloc[np.argsort(scores)[::-1][:k]]["movieID"].tolist())
     return len(top_k_movie_ids & test_movie_ids) / k
 
 
@@ -67,9 +60,7 @@ def catalog_coverage(
             (ratings["userID"] == uid) & (ratings["rating"] >= min_rating),
             "movieID",
         ].values
-        liked_idx = movie_profiles.index[
-            movie_profiles["movieID"].isin(liked_ids)
-        ].tolist()
+        liked_idx = movie_profiles.index[movie_profiles["movieID"].isin(liked_ids)].tolist()
         if not liked_idx:
             continue
         profile = embeddings[liked_idx].mean(axis=0)
@@ -80,9 +71,7 @@ def catalog_coverage(
     return len(seen) / len(movie_profiles)
 
 
-def intra_list_diversity(
-    rec_indices: list[int], embeddings: np.ndarray
-) -> float | None:
+def intra_list_diversity(rec_indices: list[int], embeddings: np.ndarray) -> float | None:
     """1 - mean pairwise cosine similarity among the recommended movies."""
     if len(rec_indices) < 2:
         return None

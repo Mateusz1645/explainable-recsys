@@ -1,4 +1,5 @@
 """SHAP and LIME helpers for explaining content-based recommendations."""
+
 import numpy as np
 
 
@@ -15,11 +16,7 @@ def extract_class_shap(shap_values, expected_value, class_idx: int = 1):
     else:
         sv = shap_values  # already 2D
 
-    base = (
-        expected_value[class_idx]
-        if hasattr(expected_value, "__len__")
-        else float(expected_value)
-    )
+    base = expected_value[class_idx] if hasattr(expected_value, "__len__") else float(expected_value)
     return sv, base
 
 

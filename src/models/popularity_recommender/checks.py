@@ -57,9 +57,7 @@ class PopularityRecommender:
         C = movie_features_df["movie_avg_rating"].mean()
 
         # Keep only sufficiently rated movies
-        qualified = movie_features_df[
-            movie_features_df["movie_rating_count"] >= self.min_votes
-        ].copy()
+        qualified = movie_features_df[movie_features_df["movie_rating_count"] >= self.min_votes].copy()
 
         # IMDb-style weighted rating formula
         #
@@ -73,28 +71,13 @@ class PopularityRecommender:
         # C  = global mean rating
 
         qualified["weighted_rating"] = (
-            (
-                qualified["movie_rating_count"]
-                / (qualified["movie_rating_count"] + self.min_votes)
-            ) * qualified["movie_avg_rating"]
-            +
-            (
-                self.min_votes
-                / (qualified["movie_rating_count"] + self.min_votes)
-            ) * C
-        )
+            qualified["movie_rating_count"] / (qualified["movie_rating_count"] + self.min_votes)
+        ) * qualified["movie_avg_rating"] + (self.min_votes / (qualified["movie_rating_count"] + self.min_votes)) * C
 
         # Merge titles for readability
         self.recommendations_df = (
-            qualified.merge(
-                movies_metadata_df,
-                on="movieID",
-                how="left"
-            )
-            .sort_values(
-                by="weighted_rating",
-                ascending=False
-            )
+            qualified.merge(movies_metadata_df, on="movieID", how="left")
+            .sort_values(by="weighted_rating", ascending=False)
             .reset_index(drop=True)
         )
 
@@ -132,13 +115,7 @@ class PopularityRecommender:
         # If no pool is defined, return the top-N globally best movies
         if self.pool_size is None:
             return self.recommendations_df.head(top_n)[
-                [
-                    "movieID",
-                    "title",
-                    "movie_avg_rating",
-                    "movie_rating_count",
-                    "weighted_rating"
-                ]
+                ["movieID", "title", "movie_avg_rating", "movie_rating_count", "weighted_rating"]
             ].reset_index(drop=True)
 
         # Otherwise, sample top_n movies from the top `self.pool_size` movies
@@ -149,12 +126,6 @@ class PopularityRecommender:
         else:
             result = pool.sample(n=top_n, random_state=random_state)
 
-        return result[
-            [
-                "movieID",
-                "title",
-                "movie_avg_rating",
-                "movie_rating_count",
-                "weighted_rating"
-        ]
-    ].reset_index(drop=True)
+        return result[["movieID", "title", "movie_avg_rating", "movie_rating_count", "weighted_rating"]].reset_index(
+            drop=True
+        )

@@ -1,4 +1,5 @@
 """Sentence-transformer encoding + on-disk caching for movie embeddings."""
+
 from pathlib import Path
 
 import numpy as np

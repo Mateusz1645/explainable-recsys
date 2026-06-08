@@ -3,11 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def load_data_tables(
-    file_map: dict[str, Path],
-    sep: str = "\t",
-    encoding: str = "latin-1"
-) -> dict[str, pd.DataFrame]:
+def load_data_tables(file_map: dict[str, Path], sep: str = "\t", encoding: str = "latin-1") -> dict[str, pd.DataFrame]:
     """Load all tables defined in ``file_map`` into memory.
 
     Parameters
