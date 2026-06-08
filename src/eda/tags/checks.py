@@ -89,9 +89,8 @@ def tags_coverage_report(tags: pd.DataFrame, movie_tags: pd.DataFrame, user_tagg
 
 
 def tag_usage_report(
-        tags: pd.DataFrame,
-        movie_tags: pd.DataFrame,
-        user_taggedmovies: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    tags: pd.DataFrame, movie_tags: pd.DataFrame, user_taggedmovies: pd.DataFrame
+) -> dict[str, pd.DataFrame]:
     """Summarize total tag usage frequency across movie and user tagging tables."""
     if "id" not in tags.columns:
         raise KeyError("tags must contain: id")
@@ -103,11 +102,7 @@ def tag_usage_report(
     movie_counts = movie_tags.groupby("tagID").size().rename("movie_tag_count")
     user_counts = user_taggedmovies.groupby("tagID").size().rename("user_tag_count")
 
-    usage = (
-        movie_counts.to_frame()
-        .join(user_counts.to_frame(), how="outer")
-        .fillna(0)
-    )
+    usage = movie_counts.to_frame().join(user_counts.to_frame(), how="outer").fillna(0)
     usage["movie_tag_count"] = usage["movie_tag_count"].astype(int)
     usage["user_tag_count"] = usage["user_tag_count"].astype(int)
     usage["total_usage"] = usage["movie_tag_count"] + usage["user_tag_count"]

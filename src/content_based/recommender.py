@@ -1,4 +1,5 @@
 """Movie-to-movie and user-profile recommendation functions."""
+
 import numpy as np
 import pandas as pd
 
@@ -47,10 +48,7 @@ def get_recommendations(
         print(f"{'#':<4} {'Title':<40} {'Year':<6} Similarity")
         print("-" * 65)
         for rank, row in result.iterrows():
-            print(
-                f"{rank:<4} {str(row['title'])[:39]:<40} "
-                f"{str(int(row['year'])):<6} {row['similarity']:.4f}"
-            )
+            print(f"{rank:<4} {str(row['title'])[:39]:<40} {str(int(row['year'])):<6} {row['similarity']:.4f}")
         print("-" * 65)
     return result
 
@@ -99,9 +97,6 @@ def recommend_for_user(
         print(f"Top {n} recommendations:")
         print("-" * 65)
         for rank, row in result.iterrows():
-            print(
-                f"{rank:<4} {str(row['title'])[:39]:<40} "
-                f"{str(int(row['year'])):<6} {row['score']:.4f}"
-            )
+            print(f"{rank:<4} {str(row['title'])[:39]:<40} {str(int(row['year'])):<6} {row['score']:.4f}")
         print("-" * 65)
     return result

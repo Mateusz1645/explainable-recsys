@@ -56,10 +56,7 @@ def genres_per_movie_report(movie_genres: pd.DataFrame) -> dict[str, pd.DataFram
         raise KeyError("movie_genres must contain: movieID, genre")
 
     genres_per_movie = (
-        movie_genres.drop_duplicates(subset=["movieID", "genre"])
-        .groupby("movieID")
-        .size()
-        .rename("genres_per_movie")
+        movie_genres.drop_duplicates(subset=["movieID", "genre"]).groupby("movieID").size().rename("genres_per_movie")
     )
 
     summary = pd.DataFrame(
