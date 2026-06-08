@@ -1,10 +1,7 @@
 import pandas as pd
 import pytest
 
-from src.models.collaborative_filtering import (
-    SGDMatrixFactorization,
-    SVDCollaborativeFiltering,
-)
+from src.models.collaborative_filtering import SGDMatrixFactorization, SVDCollaborativeFiltering
 
 
 def _interactions():

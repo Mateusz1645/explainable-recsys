@@ -1,4 +1,4 @@
-from .checks import (PopularityRecommender)
+from .checks import PopularityRecommender
 
 __all__ = [
     "PopularityRecommender"

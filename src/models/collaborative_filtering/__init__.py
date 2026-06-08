@@ -1,4 +1,4 @@
-from .checks import (SVDCollaborativeFiltering, SGDMatrixFactorization)
+from .checks import SGDMatrixFactorization, SVDCollaborativeFiltering
 
 __all__ = [
     "SVDCollaborativeFiltering",
