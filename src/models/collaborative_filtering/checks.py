@@ -849,3 +849,4 @@ class SGDMatrixFactorization:
                 "predicted_rating"
             ]
         ]
+
