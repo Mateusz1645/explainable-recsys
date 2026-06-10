@@ -1,5 +1,4 @@
 import mlflow
-import pandas as pd
 
 
 class PopularityRecommender:
