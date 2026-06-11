@@ -61,10 +61,7 @@ def actors_per_movie_report(movie_actors: pd.DataFrame) -> dict[str, pd.DataFram
         raise KeyError("movie_actors must contain: movieID, actorID")
 
     actors_per_movie = (
-        movie_actors.drop_duplicates(subset=["movieID", "actorID"])
-        .groupby("movieID")
-        .size()
-        .rename("actors_per_movie")
+        movie_actors.drop_duplicates(subset=["movieID", "actorID"]).groupby("movieID").size().rename("actors_per_movie")
     )
 
     summary = pd.DataFrame(
@@ -83,11 +80,7 @@ def actors_per_movie_report(movie_actors: pd.DataFrame) -> dict[str, pd.DataFram
     )
 
     top_movies = actors_per_movie.sort_values(ascending=False).head(20).to_frame()
-    results = {
-        "summary": summary,
-        "distribution": actors_per_movie.to_frame(),
-        "top_movies": top_movies
-        }
+    results = {"summary": summary, "distribution": actors_per_movie.to_frame(), "top_movies": top_movies}
 
     return results
 
@@ -101,12 +94,7 @@ def movies_per_actor_report(movie_actors: pd.DataFrame) -> dict[str, pd.DataFram
     dedup = movie_actors.drop_duplicates(subset=["movieID", "actorID"]).copy()
     movies_per_actor = dedup.groupby("actorID").size().rename("movies_per_actor")
 
-    actor_names = (
-        dedup[["actorID", "actorName"]]
-        .dropna()
-        .drop_duplicates(subset=["actorID"])
-        .set_index("actorID")
-    )
+    actor_names = dedup[["actorID", "actorName"]].dropna().drop_duplicates(subset=["actorID"]).set_index("actorID")
 
     summary = pd.DataFrame(
         {
@@ -123,19 +111,9 @@ def movies_per_actor_report(movie_actors: pd.DataFrame) -> dict[str, pd.DataFram
         }
     )
 
-    top_actors = (
-        movies_per_actor
-        .sort_values(ascending=False)
-        .head(20)
-        .to_frame()
-        .join(actor_names, how="left")
-    )
+    top_actors = movies_per_actor.sort_values(ascending=False).head(20).to_frame().join(actor_names, how="left")
 
-    results = {
-        "summary": summary,
-        "distribution": movies_per_actor.to_frame(),
-        "top_actors": top_actors
-        }
+    results = {"summary": summary, "distribution": movies_per_actor.to_frame(), "top_actors": top_actors}
 
     return results
 
@@ -172,9 +150,7 @@ def ranking_imdb_order_report(movie_actors: pd.DataFrame) -> dict[str, pd.DataFr
     n_unique = by_movie.nunique()
     max_rank = by_movie.max()
 
-    non_contiguous_movie_ids = min_rank[
-        (min_rank != 1) | ((max_rank - min_rank + 1) != n_unique)
-    ].index
+    non_contiguous_movie_ids = min_rank[(min_rank != 1) | ((max_rank - min_rank + 1) != n_unique)].index
 
     summary = pd.DataFrame(
         {

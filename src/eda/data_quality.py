@@ -80,23 +80,14 @@ def dataframe_overview(df: pd.DataFrame) -> pd.DataFrame:
     """
     numeric_cols = df.select_dtypes(include=[np.number]).columns
 
-    ignore_stats_cols = {
-        "id",
-        "movieID",
-        "userID",
-        "actorID",
-        "tagID"
-    }
+    ignore_stats_cols = {"id", "movieID", "userID", "actorID", "tagID"}
 
     rows = []
 
     for col in df.columns:
         series = df[col]
 
-        is_id_like = (
-            col in ignore_stats_cols
-            or col.lower().endswith("id")
-        )
+        is_id_like = col in ignore_stats_cols or col.lower().endswith("id")
 
         if col in numeric_cols and not is_id_like:
             col_type = "numeric"

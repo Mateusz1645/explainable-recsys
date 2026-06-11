@@ -40,10 +40,24 @@ DATASET_END_DATE = pd.Timestamp("2009-01-05")
 
 # Genres that appear in movie_genres (complete list from EDA).
 ALL_GENRES = [
-    "Action", "Adventure", "Animation", "Children", "Comedy",
-    "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir",
-    "Horror", "Musical", "Mystery", "Romance", "Sci-Fi",
-    "Thriller", "War", "Western",
+    "Action",
+    "Adventure",
+    "Animation",
+    "Children",
+    "Comedy",
+    "Crime",
+    "Documentary",
+    "Drama",
+    "Fantasy",
+    "Film-Noir",
+    "Horror",
+    "Musical",
+    "Mystery",
+    "Romance",
+    "Sci-Fi",
+    "Thriller",
+    "War",
+    "Western",
 ]
 
 # Country grouping: countries with fewer than this many movies → "Other".
@@ -60,6 +74,7 @@ CAST_SIZE_CAP = 50
 # HELPER: build a proper timestamp column from HetRec date parts
 # ===========================================================================
 
+
 def _build_timestamp(df: pd.DataFrame) -> pd.Series:
     """
     HetRec-2011 stores dates as 6 separate integer columns:
@@ -69,10 +84,10 @@ def _build_timestamp(df: pd.DataFrame) -> pd.Series:
     """
     return pd.to_datetime(
         {
-            "year":   df["date_year"],
-            "month":  df["date_month"],
-            "day":    df["date_day"],
-            "hour":   df["date_hour"],
+            "year": df["date_year"],
+            "month": df["date_month"],
+            "day": df["date_day"],
+            "hour": df["date_hour"],
             "minute": df["date_minute"],
             "second": df["date_second"],
         }
@@ -116,56 +131,43 @@ def build_user_rating_features(
     df["timestamp"] = _build_timestamp(df)
 
     # --- core rating statistics -------------------------------------------
-    agg = df.groupby("userID").agg(
-        user_rating_count=("rating", "count"),
-        user_avg_rating=("rating", "mean"),
-        user_rating_std=("rating", "std"),
-        user_min_rating=("rating", "min"),
-        user_max_rating=("rating", "max"),
-        user_first_rating_date=("timestamp", "min"),
-        user_last_rating_date=("timestamp", "max"),
-    ).reset_index()
+    agg = (
+        df.groupby("userID")
+        .agg(
+            user_rating_count=("rating", "count"),
+            user_avg_rating=("rating", "mean"),
+            user_rating_std=("rating", "std"),
+            user_min_rating=("rating", "min"),
+            user_max_rating=("rating", "max"),
+            user_first_rating_date=("timestamp", "min"),
+            user_last_rating_date=("timestamp", "max"),
+        )
+        .reset_index()
+    )
 
     # std is NaN for users with a single rating – fill with 0
     agg["user_rating_std"] = agg["user_rating_std"].fillna(0.0)
 
     # --- derived features -------------------------------------------------
-    agg["user_rating_range"] = (
-        agg["user_max_rating"] - agg["user_min_rating"]
-    )
+    agg["user_rating_range"] = agg["user_max_rating"] - agg["user_min_rating"]
 
-    high_rating_counts = (
-        df[df["rating"] >= 4.0]
-        .groupby("userID")
-        .size()
-        .rename("_high_count")
-    )
+    high_rating_counts = df[df["rating"] >= 4.0].groupby("userID").size().rename("_high_count")
     agg = agg.merge(high_rating_counts, on="userID", how="left")
     agg["_high_count"] = agg["_high_count"].fillna(0)
-    agg["user_pct_high_ratings"] = (
-        agg["_high_count"] / agg["user_rating_count"]
-    )
+    agg["user_pct_high_ratings"] = agg["_high_count"] / agg["user_rating_count"]
     agg = agg.drop(columns=["_high_count"])
 
     # --- temporal features ------------------------------------------------
-    agg["user_activity_span_days"] = (
-        agg["user_last_rating_date"] - agg["user_first_rating_date"]
-    ).dt.days.fillna(0)
+    agg["user_activity_span_days"] = (agg["user_last_rating_date"] - agg["user_first_rating_date"]).dt.days.fillna(0)
 
-    agg["user_days_since_last_rating"] = (
-        DATASET_END_DATE - agg["user_last_rating_date"]
-    ).dt.days
+    agg["user_days_since_last_rating"] = (DATASET_END_DATE - agg["user_last_rating_date"]).dt.days
 
     # --- composite feature ------------------------------------------------
     # Useful for tree models and SHAP: captures "how active AND how positive".
-    agg["user_avg_rating_log_count"] = (
-        agg["user_avg_rating"] * np.log1p(agg["user_rating_count"])
-    )
+    agg["user_avg_rating_log_count"] = agg["user_avg_rating"] * np.log1p(agg["user_rating_count"])
 
     # Drop raw date columns – models should not see raw Timestamps.
-    agg = agg.drop(
-        columns=["user_first_rating_date", "user_last_rating_date"]
-    )
+    agg = agg.drop(columns=["user_first_rating_date", "user_last_rating_date"])
 
     return agg
 
@@ -188,15 +190,17 @@ def build_user_tag_features(
     features improve cold-start and SHAP explanations ("this user is a
     heavy tagger").
     """
-    agg = user_taggedmovies_df.groupby("userID").agg(
-        user_tag_event_count=("tagID", "count"),
-        user_unique_movies_tagged=("movieID", "nunique"),
-        user_unique_tags_used=("tagID", "nunique"),
-    ).reset_index()
-
-    agg["user_tagging_intensity"] = (
-        agg["user_tag_event_count"] / agg["user_unique_movies_tagged"]
+    agg = (
+        user_taggedmovies_df.groupby("userID")
+        .agg(
+            user_tag_event_count=("tagID", "count"),
+            user_unique_movies_tagged=("movieID", "nunique"),
+            user_unique_tags_used=("tagID", "nunique"),
+        )
+        .reset_index()
     )
+
+    agg["user_tagging_intensity"] = agg["user_tag_event_count"] / agg["user_unique_movies_tagged"]
 
     return agg
 
@@ -261,21 +265,20 @@ def build_movie_popularity_features(
     """
     df = user_ratedmovies_df
 
-    agg = df.groupby("movieID").agg(
-        movie_rating_count=("rating", "count"),
-        movie_avg_rating=("rating", "mean"),
-        movie_rating_std=("rating", "std"),
-    ).reset_index()
+    agg = (
+        df.groupby("movieID")
+        .agg(
+            movie_rating_count=("rating", "count"),
+            movie_avg_rating=("rating", "mean"),
+            movie_rating_std=("rating", "std"),
+        )
+        .reset_index()
+    )
 
     agg["movie_rating_std"] = agg["movie_rating_std"].fillna(0.0)
     agg["movie_log_rating_count"] = np.log1p(agg["movie_rating_count"])
 
-    high_counts = (
-        df[df["rating"] >= 4.0]
-        .groupby("movieID")
-        .size()
-        .rename("_high")
-    )
+    high_counts = df[df["rating"] >= 4.0].groupby("movieID").size().rename("_high")
     agg = agg.merge(high_counts, on="movieID", how="left")
     agg["_high"] = agg["_high"].fillna(0)
     agg["movie_pct_high_ratings"] = agg["_high"] / agg["movie_rating_count"]
@@ -302,14 +305,21 @@ def build_movie_metadata_features(movies_df: pd.DataFrame) -> pd.DataFrame:
     The binary ``movie_has_rt_data`` flag doubles as a quality signal AND
     makes the missingness pattern visible to SHAP/LIME.
     """
-    df = movies_df[
-        [
-            "id", "year",
-            "rtID",
-            "rtAllCriticsRating", "rtAllCriticsScore",
-            "rtAudienceRating",   "rtAudienceScore",
+    df = (
+        movies_df[
+            [
+                "id",
+                "year",
+                "rtID",
+                "rtAllCriticsRating",
+                "rtAllCriticsScore",
+                "rtAudienceRating",
+                "rtAudienceScore",
+            ]
         ]
-    ].copy().rename(columns={"id": "movieID"})
+        .copy()
+        .rename(columns={"id": "movieID"})
+    )
 
     df["movie_year"] = df["year"].fillna(0).astype(int)
     df["movie_age"] = DATASET_END_DATE.year - df["movie_year"]
@@ -318,16 +328,15 @@ def build_movie_metadata_features(movies_df: pd.DataFrame) -> pd.DataFrame:
     df["movie_has_rt_data"] = df["rtID"].notna().astype(int)
 
     # Force RT columns to numeric — stored as strings in raw HetRec data
-    for _col in ["rtAllCriticsRating", "rtAllCriticsScore",
-                 "rtAudienceRating", "rtAudienceScore"]:
+    for _col in ["rtAllCriticsRating", "rtAllCriticsScore", "rtAudienceRating", "rtAudienceScore"]:
         df[_col] = pd.to_numeric(df[_col], errors="coerce")
 
     df = df.rename(
         columns={
             "rtAllCriticsRating": "movie_rt_critics_rating",
-            "rtAllCriticsScore":  "movie_rt_critics_score",
-            "rtAudienceRating":   "movie_rt_audience_rating",
-            "rtAudienceScore":    "movie_rt_audience_score",
+            "rtAllCriticsScore": "movie_rt_critics_score",
+            "rtAudienceRating": "movie_rt_audience_rating",
+            "rtAudienceScore": "movie_rt_audience_score",
         }
     )
 
@@ -344,9 +353,14 @@ def build_movie_metadata_features(movies_df: pd.DataFrame) -> pd.DataFrame:
 
     return df[
         [
-            "movieID", "movie_year", "movie_age", "movie_has_rt_data",
-            "movie_rt_critics_rating", "movie_rt_critics_score",
-            "movie_rt_audience_rating", "movie_rt_audience_score",
+            "movieID",
+            "movie_year",
+            "movie_age",
+            "movie_has_rt_data",
+            "movie_rt_critics_rating",
+            "movie_rt_critics_score",
+            "movie_rt_audience_rating",
+            "movie_rt_audience_score",
         ]
     ]
 
@@ -366,33 +380,22 @@ def build_movie_genre_features(movie_genres_df: pd.DataFrame) -> pd.DataFrame:
     to this recommendation" is immediately interpretable.
     """
     # Count genres per movie
-    genre_counts = (
-        movie_genres_df
-        .groupby("movieID")
-        .size()
-        .reset_index(name="movie_genre_count")
-    )
+    genre_counts = movie_genres_df.groupby("movieID").size().reset_index(name="movie_genre_count")
 
     # Multi-hot: pivot genre values into binary columns
     movie_genres_df = movie_genres_df.copy()
     movie_genres_df["_val"] = 1
-    genre_pivot = (
-        movie_genres_df
-        .pivot_table(
-            index="movieID",
-            columns="genre",
-            values="_val",
-            aggfunc="max",
-            fill_value=0,
-        )
-        .reset_index()
-    )
+    genre_pivot = movie_genres_df.pivot_table(
+        index="movieID",
+        columns="genre",
+        values="_val",
+        aggfunc="max",
+        fill_value=0,
+    ).reset_index()
 
     # Rename columns to be model-friendly and SHAP-readable
     genre_pivot.columns.name = None
-    genre_pivot = genre_pivot.rename(
-        columns={g: f"genre_{g}" for g in ALL_GENRES if g in genre_pivot.columns}
-    )
+    genre_pivot = genre_pivot.rename(columns={g: f"genre_{g}" for g in ALL_GENRES if g in genre_pivot.columns})
 
     # Ensure ALL expected genre columns exist (some may be absent)
     for genre in ALL_GENRES:
@@ -432,19 +435,19 @@ def build_movie_actor_features(
         .reset_index(name="movie_has_rank_conflict")
     )
 
-    agg = df.groupby("movieID").agg(
-        movie_cast_size=("actorID", "count"),
-        movie_top_actor_rank_min=("ranking", "min"),
-        movie_top_actor_rank_mean=("ranking", "mean"),
-    ).reset_index()
+    agg = (
+        df.groupby("movieID")
+        .agg(
+            movie_cast_size=("actorID", "count"),
+            movie_top_actor_rank_min=("ranking", "min"),
+            movie_top_actor_rank_mean=("ranking", "mean"),
+        )
+        .reset_index()
+    )
 
-    agg["movie_cast_size_capped"] = agg["movie_cast_size"].clip(
-        upper=CAST_SIZE_CAP
-    )
+    agg["movie_cast_size_capped"] = agg["movie_cast_size"].clip(upper=CAST_SIZE_CAP)
     agg = agg.merge(rank_dup_flags, on="movieID", how="left")
-    agg["movie_has_rank_conflict"] = (
-        agg["movie_has_rank_conflict"].fillna(0).astype(int)
-    )
+    agg["movie_has_rank_conflict"] = agg["movie_has_rank_conflict"].fillna(0).astype(int)
 
     return agg
 
@@ -465,19 +468,18 @@ def build_movie_director_features(
     flag preserves the 42-missing-movie signal your EDA found.
     """
     # Director experience = how many movies each director appears in
-    dir_exp = (
-        movie_directors_df
-        .groupby("directorID")
-        .size()
-        .reset_index(name="director_experience")
-    )
+    dir_exp = movie_directors_df.groupby("directorID").size().reset_index(name="director_experience")
 
     df = movie_directors_df.merge(dir_exp, on="directorID", how="left")
 
     # If a movie has multiple directors, take the max experience (primary director proxy)
-    agg = df.groupby("movieID").agg(
-        movie_director_experience=("director_experience", "max"),
-    ).reset_index()
+    agg = (
+        df.groupby("movieID")
+        .agg(
+            movie_director_experience=("director_experience", "max"),
+        )
+        .reset_index()
+    )
     agg["movie_has_director"] = 1
 
     return agg
@@ -502,13 +504,9 @@ def build_movie_country_features(
     df["country"] = df["country"].fillna("Unknown")
 
     country_counts = df["country"].value_counts()
-    rare_countries = country_counts[
-        country_counts < RARE_COUNTRY_THRESHOLD
-    ].index
+    rare_countries = country_counts[country_counts < RARE_COUNTRY_THRESHOLD].index
 
-    df["movie_country_encoded"] = df["country"].where(
-        ~df["country"].isin(rare_countries), other="Other"
-    )
+    df["movie_country_encoded"] = df["country"].where(~df["country"].isin(rare_countries), other="Other")
 
     return df[["movieID", "movie_country_encoded"]]
 
@@ -528,11 +526,15 @@ def build_movie_tag_features(movie_tags_df: pd.DataFrame) -> pd.DataFrame:
     High tag weight sum signals a well-described, popular movie.
     log1p compression handles the heavy tail your EDA confirmed.
     """
-    agg = movie_tags_df.groupby("movieID").agg(
-        movie_unique_tag_count=("tagID", "count"),
-        movie_tag_weight_sum=("tagWeight", "sum"),
-        movie_tag_weight_mean=("tagWeight", "mean"),
-    ).reset_index()
+    agg = (
+        movie_tags_df.groupby("movieID")
+        .agg(
+            movie_unique_tag_count=("tagID", "count"),
+            movie_tag_weight_sum=("tagWeight", "sum"),
+            movie_tag_weight_mean=("tagWeight", "mean"),
+        )
+        .reset_index()
+    )
 
     agg["movie_log_tag_weight_sum"] = np.log1p(agg["movie_tag_weight_sum"])
 
@@ -597,23 +599,14 @@ def build_movie_features(
         movie_features = movie_features.merge(block, on="movieID", how="left")
 
     # --- fill missing values for optional metadata -----------------------
-    movie_features["movie_has_director"] = (
-        movie_features["movie_has_director"].fillna(0).astype(int)
-    )
-    movie_features["movie_director_experience"] = (
-        movie_features["movie_director_experience"].fillna(0)
-    )
+    movie_features["movie_has_director"] = movie_features["movie_has_director"].fillna(0).astype(int)
+    movie_features["movie_director_experience"] = movie_features["movie_director_experience"].fillna(0)
 
-    for col in ["movie_unique_tag_count", "movie_tag_weight_sum",
-                "movie_tag_weight_mean", "movie_log_tag_weight_sum"]:
+    for col in ["movie_unique_tag_count", "movie_tag_weight_sum", "movie_tag_weight_mean", "movie_log_tag_weight_sum"]:
         movie_features[col] = movie_features[col].fillna(0)
 
-    movie_features["movie_location_depth"] = (
-        movie_features["movie_location_depth"].fillna(0).astype(int)
-    )
-    movie_features["movie_country_encoded"] = (
-        movie_features["movie_country_encoded"].fillna("Unknown")
-    )
+    movie_features["movie_location_depth"] = movie_features["movie_location_depth"].fillna(0).astype(int)
+    movie_features["movie_country_encoded"] = movie_features["movie_country_encoded"].fillna("Unknown")
 
     return movie_features
 
@@ -661,38 +654,30 @@ def build_interaction_features(
     # --- 1. merge user and movie summary stats ----------------------------
     user_cols = ["userID", "user_avg_rating", "user_rating_count"]
     movie_cols = [
-        "movieID", "movie_avg_rating", "movie_year",
+        "movieID",
+        "movie_avg_rating",
+        "movie_year",
     ]
     df = df.merge(user_features[user_cols], on="userID", how="left")
     df = df.merge(movie_features[movie_cols], on="movieID", how="left")
 
     # --- 2. rating deviations ---------------------------------------------
     df["interaction_rating"] = df["rating"]
-    df["interaction_rating_vs_user_avg"] = (
-        df["rating"] - df["user_avg_rating"]
-    )
-    df["interaction_rating_vs_movie_avg"] = (
-        df["rating"] - df["movie_avg_rating"]
-    )
+    df["interaction_rating_vs_user_avg"] = df["rating"] - df["user_avg_rating"]
+    df["interaction_rating_vs_movie_avg"] = df["rating"] - df["movie_avg_rating"]
 
     # --- 3. movie age at the time of the rating ---------------------------
-    df["interaction_movie_age_at_rating"] = (
-        df["timestamp"].dt.year - df["movie_year"]
-    ).clip(lower=0)
+    df["interaction_movie_age_at_rating"] = (df["timestamp"].dt.year - df["movie_year"]).clip(lower=0)
 
     # --- 4. is_early_rater -----------------------------------------------
     # 1 if the user rated the movie within 1 year of its release
-    df["interaction_is_early_rater"] = (
-        df["interaction_movie_age_at_rating"] <= 1
-    ).astype(int)
+    df["interaction_is_early_rater"] = (df["interaction_movie_age_at_rating"] <= 1).astype(int)
 
     # --- 5. user rating sequence ------------------------------------------
     # Position of this rating in the user's personal history (chronological).
     # Useful for sequential models and detecting "rating fatigue".
     df = df.sort_values(["userID", "timestamp"])
-    df["interaction_user_rating_sequence"] = (
-        df.groupby("userID").cumcount() + 1
-    )
+    df["interaction_user_rating_sequence"] = df.groupby("userID").cumcount() + 1
 
     # --- 6. genre affinity features per interaction -----------------------
     # For each interaction, look up the user's average rating for each
@@ -703,7 +688,9 @@ def build_interaction_features(
 
     # --- 7. select and return final columns -------------------------------
     interaction_cols = [
-        "userID", "movieID", "timestamp",
+        "userID",
+        "movieID",
+        "timestamp",
         "interaction_rating",
         "interaction_rating_vs_user_avg",
         "interaction_rating_vs_movie_avg",
@@ -746,10 +733,7 @@ def _build_genre_affinity(
         # Use only ratings for movies that have this genre
         genre_ratings = ratings_with_genres[ratings_with_genres[col] == 1]
         user_genre_avg = (
-            genre_ratings
-            .groupby("userID")["rating"]
-            .mean()
-            .reset_index(name=f"user_genre_affinity_{genre}")
+            genre_ratings.groupby("userID")["rating"].mean().reset_index(name=f"user_genre_affinity_{genre}")
         )
         affinity_frames.append(user_genre_avg)
 

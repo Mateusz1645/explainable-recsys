@@ -9,3 +9,4 @@ numpy>=1.26
 matplotlib>=3.8
 seaborn>=0.13
 torch>=2.1
+sentence-transformers>=2.2
