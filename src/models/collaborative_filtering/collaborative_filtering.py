@@ -54,11 +54,13 @@ class SVDCollaborativeFiltering:
 
         try:
             # Log hyperparameters
-            mlflow.log_params({
-                "model_type":   "SVD",
-                "n_factors":    self.n_factors,
-                "random_state": self.random_state,
-            })
+            mlflow.log_params(
+                {
+                    "model_type": "SVD",
+                    "n_factors": self.n_factors,
+                    "random_state": self.random_state,
+                }
+            )
 
             mlflow.set_tag("model_type", "SVD")
 
@@ -79,11 +81,13 @@ class SVDCollaborativeFiltering:
             print(f"User-item matrix shape: {self.user_item_matrix.shape}")
 
             # Log dataset statistics
-            mlflow.log_params({
-                "n_users":        n_users,
-                "n_movies":       n_movies,
-                "n_interactions": len(interactions_df),
-            })
+            mlflow.log_params(
+                {
+                    "n_users": n_users,
+                    "n_movies": n_movies,
+                    "n_interactions": len(interactions_df),
+                }
+            )
 
             print("Step 2: Mean-centering user ratings...")
             self.user_means = self.user_item_matrix.mean(axis=1)
@@ -166,17 +170,19 @@ class SVDCollaborativeFiltering:
         mae = np.mean(np.abs(actuals - predictions))
 
         results = {
-            "RMSE":                   rmse,
-            "MAE":                    mae,
+            "RMSE": rmse,
+            "MAE": mae,
             "Evaluated_Interactions": len(actuals),
         }
 
         # Log evaluation metrics to MLflow
-        mlflow.log_metrics({
-            "test_rmse":              round(rmse, 4),
-            "test_mae":               round(mae, 4),
-            "evaluated_interactions": len(actuals),
-        })
+        mlflow.log_metrics(
+            {
+                "test_rmse": round(rmse, 4),
+                "test_mae": round(mae, 4),
+                "evaluated_interactions": len(actuals),
+            }
+        )
 
         print(results)
 
@@ -293,16 +299,18 @@ class SGDMatrixFactorization:
 
         try:
             # Log all hyperparameters
-            mlflow.log_params({
-                "model_type":     "SGD",
-                "n_factors":      self.n_factors,
-                "learning_rate":  self.lr,
-                "regularization": self.reg,
-                "epochs":         self.epochs,
-                "rating_min":     self.rating_min,
-                "rating_max":     self.rating_max,
-                "random_state":   self.random_state,
-            })
+            mlflow.log_params(
+                {
+                    "model_type": "SGD",
+                    "n_factors": self.n_factors,
+                    "learning_rate": self.lr,
+                    "regularization": self.reg,
+                    "epochs": self.epochs,
+                    "rating_min": self.rating_min,
+                    "rating_max": self.rating_max,
+                    "random_state": self.random_state,
+                }
+            )
 
             mlflow.set_tag("model_type", "SGD")
 
@@ -329,11 +337,13 @@ class SGDMatrixFactorization:
             print(f"Movies: {n_movies}")
 
             # Log dataset statistics
-            mlflow.log_params({
-                "n_users":        n_users,
-                "n_movies":       n_movies,
-                "n_interactions": len(interactions_df),
-            })
+            mlflow.log_params(
+                {
+                    "n_users": n_users,
+                    "n_movies": n_movies,
+                    "n_interactions": len(interactions_df),
+                }
+            )
 
             print("Step 2: Initializing latent factors...")
 
@@ -364,7 +374,7 @@ class SGDMatrixFactorization:
                     r_pred = self.global_mean + self.user_biases[u] + self.movie_biases[i] + dot_product
 
                     error = r_true - r_pred
-                    squared_error += error ** 2
+                    squared_error += error**2
 
                     self.user_biases[u] += self.lr * (error - self.reg * self.user_biases[u])
                     self.movie_biases[i] += self.lr * (error - self.reg * self.movie_biases[i])
@@ -442,10 +452,12 @@ class SGDMatrixFactorization:
         results = {"RMSE": round(rmse, 4), "MAE": round(mae, 4)}
 
         # Log test metrics to MLflow
-        mlflow.log_metrics({
-            "test_rmse": round(rmse, 4),
-            "test_mae":  round(mae, 4),
-        })
+        mlflow.log_metrics(
+            {
+                "test_rmse": round(rmse, 4),
+                "test_mae": round(mae, 4),
+            }
+        )
 
         print(results)
 
