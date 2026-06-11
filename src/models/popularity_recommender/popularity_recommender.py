@@ -73,7 +73,9 @@ class PopularityRecommender:
 
             qualified["weighted_rating"] = (
                 qualified["movie_rating_count"] / (qualified["movie_rating_count"] + self.min_votes)
-            ) * qualified["movie_avg_rating"] + (self.min_votes / (qualified["movie_rating_count"] + self.min_votes)) * C
+            ) * qualified["movie_avg_rating"] + (
+                self.min_votes / (qualified["movie_rating_count"] + self.min_votes)
+            ) * C
 
             self.recommendations_df = (
                 qualified.merge(movies_metadata_df, on="movieID", how="left")
@@ -91,7 +93,6 @@ class PopularityRecommender:
             return self
         finally:
             mlflow.end_run()
-
 
     def recommend(self, top_n=None, random_state=None):
         """
