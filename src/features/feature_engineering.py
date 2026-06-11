@@ -5,7 +5,6 @@ Dataset : HetRec-2011 MovieLens
 Tables  : movies, movie_actors, movie_countries, movie_directors,
           movie_genres, movie_locations, movie_tags, tags,
           user_ratedmovies, user_taggedmovies
-Author  : (your name)
 
 Usage
 -----
