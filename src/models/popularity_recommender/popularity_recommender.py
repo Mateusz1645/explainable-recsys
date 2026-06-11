@@ -41,64 +41,57 @@ class PopularityRecommender:
         self
         """
 
-        # Start MLflow run
         mlflow.start_run(run_name="PopularityRecommender")
 
-        # Log hyperparameters
-        mlflow.log_params(
-            {
-                "model_type": "PopularityRecommender",
-                "min_votes": self.min_votes,
-                "top_n": self.top_n,
-                "pool_size": self.pool_size if self.pool_size is not None else "None",
-            }
-        )
+        try:
+            mlflow.log_params(
+                {
+                    "model_type": "PopularityRecommender",
+                    "min_votes": self.min_votes,
+                    "top_n": self.top_n,
+                    "pool_size": self.pool_size if self.pool_size is not None else "None",
+                }
+            )
 
-        mlflow.set_tag("model_type", "PopularityRecommender")
+            mlflow.set_tag("model_type", "PopularityRecommender")
 
-        # Global mean rating (C in IMDb formula)
-        C = movie_features_df["movie_avg_rating"].mean()
-        mlflow.log_metric("global_mean_rating", round(C, 4))
+            C = movie_features_df["movie_avg_rating"].mean()
+            mlflow.log_metric("global_mean_rating", round(C, 4))
 
-        # Keep only sufficiently rated movies
-        qualified = movie_features_df[movie_features_df["movie_rating_count"] >= self.min_votes].copy()
+            qualified = movie_features_df[movie_features_df["movie_rating_count"] >= self.min_votes].copy()
 
-        n_total = len(movie_features_df)
-        n_qualified = len(qualified)
-        print(f"Movies passing min_votes={self.min_votes} threshold: {n_qualified} / {n_total}")
+            n_total = len(movie_features_df)
+            n_qualified = len(qualified)
+            print(f"Movies passing min_votes={self.min_votes} threshold: {n_qualified} / {n_total}")
 
-        mlflow.log_metrics(
-            {
-                "n_total_movies": n_total,
-                "n_qualified_movies": n_qualified,
-            }
-        )
+            mlflow.log_metrics(
+                {
+                    "n_total_movies": n_total,
+                    "n_qualified_movies": n_qualified,
+                }
+            )
 
-        # IMDb-style weighted rating:
-        # WR = (v / (v + m)) * R + (m / (v + m)) * C
-        qualified["weighted_rating"] = (
-            qualified["movie_rating_count"] / (qualified["movie_rating_count"] + self.min_votes)
-        ) * qualified["movie_avg_rating"] + (self.min_votes / (qualified["movie_rating_count"] + self.min_votes)) * C
+            qualified["weighted_rating"] = (
+                qualified["movie_rating_count"] / (qualified["movie_rating_count"] + self.min_votes)
+            ) * qualified["movie_avg_rating"] + (self.min_votes / (qualified["movie_rating_count"] + self.min_votes)) * C
 
-        # Merge titles and sort
-        self.recommendations_df = (
-            qualified.merge(movies_metadata_df, on="movieID", how="left")
-            .sort_values(by="weighted_rating", ascending=False)
-            .reset_index(drop=True)
-        )
+            self.recommendations_df = (
+                qualified.merge(movies_metadata_df, on="movieID", how="left")
+                .sort_values(by="weighted_rating", ascending=False)
+                .reset_index(drop=True)
+            )
 
-        # Log quality metrics about the ranked list
-        mlflow.log_metrics(
-            {
-                "mean_weighted_rating": round(self.recommendations_df["weighted_rating"].mean(), 4),
-                "top1_weighted_rating": round(self.recommendations_df["weighted_rating"].iloc[0], 4),
-            }
-        )
+            mlflow.log_metrics(
+                {
+                    "mean_weighted_rating": round(self.recommendations_df["weighted_rating"].mean(), 4),
+                    "top1_weighted_rating": round(self.recommendations_df["weighted_rating"].iloc[0], 4),
+                }
+            )
 
-        # End the MLflow run
-        mlflow.end_run()
+            return self
+        finally:
+            mlflow.end_run()
 
-        return self
 
     def recommend(self, top_n=None, random_state=None):
         """

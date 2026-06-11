@@ -49,11 +49,9 @@ class SVDCollaborativeFiltering:
         self
         """
 
-        # Start MLflow run — all subsequent log_* calls go into this run
         mlflow.start_run(run_name="SVD_CollaborativeFiltering")
 
         try:
-            # Log hyperparameters
             mlflow.log_params(
                 {
                     "model_type": "SVD",
@@ -80,7 +78,6 @@ class SVDCollaborativeFiltering:
             n_users, n_movies = self.user_item_matrix.shape
             print(f"User-item matrix shape: {self.user_item_matrix.shape}")
 
-            # Log dataset statistics
             mlflow.log_params(
                 {
                     "n_users": n_users,
@@ -111,13 +108,13 @@ class SVDCollaborativeFiltering:
             )
 
             print("Prediction matrix created successfully.")
-
+            return self
         except Exception:
-            # Make sure the run is closed even if something goes wrong
             mlflow.end_run(status="FAILED")
             raise
-
-        return self
+        finally:
+            if mlflow.active_run() is not None:
+                mlflow.end_run()
 
     def predict_rating(self, user_id, movie_id):
         """
@@ -152,44 +149,44 @@ class SVDCollaborativeFiltering:
         dict with keys: RMSE, MAE, Evaluated_Interactions
         """
 
-        print("Evaluating model on test set...")
+        mlflow.start_run(run_name="SVD_CollaborativeFiltering_Evaluation")
 
-        predictions = []
-        actuals = []
+        try:
+            print("Evaluating model on test set...")
 
-        for row in test_df.itertuples():
-            pred = self.predict_rating(row.userID, row.movieID)
-            if not np.isnan(pred):
-                predictions.append(pred)
-                actuals.append(row.interaction_rating)
+            predictions = []
+            actuals = []
 
-        predictions = np.array(predictions)
-        actuals = np.array(actuals)
+            for row in test_df.itertuples():
+                pred = self.predict_rating(row.userID, row.movieID)
+                if not np.isnan(pred):
+                    predictions.append(pred)
+                    actuals.append(row.interaction_rating)
 
-        rmse = np.sqrt(np.mean((actuals - predictions) ** 2))
-        mae = np.mean(np.abs(actuals - predictions))
+            predictions = np.array(predictions)
+            actuals = np.array(actuals)
 
-        results = {
-            "RMSE": rmse,
-            "MAE": mae,
-            "Evaluated_Interactions": len(actuals),
-        }
+            rmse = np.sqrt(np.mean((actuals - predictions) ** 2))
+            mae = np.mean(np.abs(actuals - predictions))
 
-        # Log evaluation metrics to MLflow
-        mlflow.log_metrics(
-            {
-                "test_rmse": round(rmse, 4),
-                "test_mae": round(mae, 4),
-                "evaluated_interactions": len(actuals),
+            results = {
+                "RMSE": rmse,
+                "MAE": mae,
+                "Evaluated_Interactions": len(actuals),
             }
-        )
 
-        print(results)
+            mlflow.log_metrics(
+                {
+                    "test_rmse": round(rmse, 4),
+                    "test_mae": round(mae, 4),
+                    "evaluated_interactions": len(actuals),
+                }
+            )
 
-        # End the MLflow run after evaluation
-        mlflow.end_run()
-
-        return results
+            print(results)
+            return results
+        finally:
+            mlflow.end_run()
 
     def recommend(self, user_id, movies_metadata_df, top_n=10):
         """
@@ -294,11 +291,9 @@ class SGDMatrixFactorization:
         self
         """
 
-        # Start MLflow run
         mlflow.start_run(run_name="SGD_MatrixFactorization")
 
         try:
-            # Log all hyperparameters
             mlflow.log_params(
                 {
                     "model_type": "SGD",
@@ -336,7 +331,6 @@ class SGDMatrixFactorization:
             print(f"Users: {n_users}")
             print(f"Movies: {n_movies}")
 
-            # Log dataset statistics
             mlflow.log_params(
                 {
                     "n_users": n_users,
@@ -384,21 +378,19 @@ class SGDMatrixFactorization:
                     self.movie_factors[i] += self.lr * (error * old_user_vector - self.reg * self.movie_factors[i])
 
                 rmse = np.sqrt(squared_error / len(samples))
-
-                # Log training RMSE every epoch — shows as a curve in MLflow UI
                 mlflow.log_metric("train_rmse", round(rmse, 4), step=epoch + 1)
 
                 if epoch == 0 or (epoch + 1) % 5 == 0:
                     print(f"Epoch {epoch + 1:02d}/{self.epochs} | Training RMSE: {rmse:.4f}")
 
             print("Training completed successfully.")
-
+            return self
         except Exception:
-            # Make sure the run is closed even if something goes wrong
             mlflow.end_run(status="FAILED")
             raise
-
-        return self
+        finally:
+            if mlflow.active_run() is not None:
+                mlflow.end_run()
 
     def predict_rating(self, user_id: Any, movie_id: Any) -> float:
         """
@@ -436,35 +428,35 @@ class SGDMatrixFactorization:
         dict with keys: RMSE, MAE
         """
 
-        print("Evaluating model on test set...")
+        mlflow.start_run(run_name="SGD_MatrixFactorization_Evaluation")
 
-        y_true = []
-        y_pred = []
+        try:
+            print("Evaluating model on test set...")
 
-        for row in test_df.itertuples():
-            pred = self.predict_rating(user_id=row.userID, movie_id=row.movieID)
-            y_true.append(row.interaction_rating)
-            y_pred.append(pred)
+            y_true = []
+            y_pred = []
 
-        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-        mae = mean_absolute_error(y_true, y_pred)
+            for row in test_df.itertuples():
+                pred = self.predict_rating(user_id=row.userID, movie_id=row.movieID)
+                y_true.append(row.interaction_rating)
+                y_pred.append(pred)
 
-        results = {"RMSE": round(rmse, 4), "MAE": round(mae, 4)}
+            rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+            mae = mean_absolute_error(y_true, y_pred)
 
-        # Log test metrics to MLflow
-        mlflow.log_metrics(
-            {
-                "test_rmse": round(rmse, 4),
-                "test_mae": round(mae, 4),
-            }
-        )
+            results = {"RMSE": round(rmse, 4), "MAE": round(mae, 4)}
 
-        print(results)
+            mlflow.log_metrics(
+                {
+                    "test_rmse": round(rmse, 4),
+                    "test_mae": round(mae, 4),
+                }
+            )
 
-        # End the MLflow run after evaluation
-        mlflow.end_run()
-
-        return results
+            print(results)
+            return results
+        finally:
+            mlflow.end_run()
 
     def recommend(self, user_id: Any, movies_metadata_df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
         """
