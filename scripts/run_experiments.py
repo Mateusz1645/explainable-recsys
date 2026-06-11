@@ -45,15 +45,14 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     movies_metadata      : movieID + title (used by recommend() methods)
     """
     print("Loading movie features...")
-    movie_features = pd.read_parquet(DATA_DIR / "movie_features.parquet")
+    movie_features = pd.read_parquet(DATA_DIR / "processed" / "movie_features.parquet")
 
     print("Loading interaction features...")
-    interaction_features = pd.read_parquet(DATA_DIR / "interaction_features.parquet")
+    interaction_features = pd.read_parquet(DATA_DIR / "processed" / "interaction_features.parquet")
 
     print("Loading movies metadata (title)...")
-    # The raw HetRec-2011 movies file — column 'id' maps to movieID.
     movies_raw = pd.read_csv(
-        DATA_DIR / "movies.dat",
+        DATA_DIR / "raw" / "movies.dat",
         sep="\t",
         encoding="latin-1",
         usecols=["id", "title"],
