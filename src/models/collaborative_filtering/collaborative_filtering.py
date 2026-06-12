@@ -119,7 +119,6 @@ class SVDCollaborativeFiltering:
     def predict_rating(self, user_id, movie_id):
         """
         Predict rating for a single user-movie pair.
-        Clips to [0.5, 5.0] and rounds to nearest 0.5.
         """
 
         if self.predictions_df is None:
@@ -131,8 +130,6 @@ class SVDCollaborativeFiltering:
             return np.nan
 
         prediction = self.predictions_df.loc[user_id, movie_id]
-        prediction = np.clip(prediction, 0.5, 5.0)
-        prediction = round(prediction * 2) / 2
 
         return float(prediction)
 
