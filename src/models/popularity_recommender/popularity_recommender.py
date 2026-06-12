@@ -131,3 +131,42 @@ class PopularityRecommender:
             result = pool.sample(n=top_n, random_state=random_state)
 
         return result[cols].reset_index(drop=True)
+    
+    def recommend_one(self, pool_size=100, random_state=None):
+        """
+        Recommend a single movie sampled from the top pool.
+
+        Parameters
+        ----------
+        pool_size : int, default=100
+            Number of top-ranked movies considered.
+
+        random_state : int, optional
+
+        Returns
+        -------
+        pd.Series
+            One recommended movie.
+        """
+
+        if self.recommendations_df is None:
+            raise ValueError(
+                "Model must be fitted before calling recommend_one()."
+            )
+
+        cols = [
+            "movieID",
+            "title",
+            "movie_avg_rating",
+            "movie_rating_count",
+            "weighted_rating"
+        ]
+
+        pool = self.recommendations_df.head(pool_size)
+
+        return (
+            pool
+            .sample(n=1, random_state=random_state)
+            [cols]
+            .iloc[0]
+        )
