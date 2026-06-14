@@ -18,16 +18,20 @@ DATA_DIR = ROOT / "data"
 
 
 @st.cache_data
-def load_data():
+def load_movies_and_features():
     movie_features = pd.read_parquet(DATA_DIR / "processed" / "movie_features.parquet")
-    interactions = pd.read_parquet(DATA_DIR / "processed" / "interaction_features.parquet")
     movies = pd.read_csv(
         DATA_DIR / "raw" / "movies.dat",
         sep="\t",
         encoding="latin-1",
         usecols=["id", "title"],
     ).rename(columns={"id": "movieID"})
-    return movie_features, interactions, movies
+    return movie_features, movies
+
+
+@st.cache_data
+def load_interactions():
+    return pd.read_parquet(DATA_DIR / "processed" / "interaction_features.parquet")
 
 
 def temporal_split(df: pd.DataFrame, test_fraction: float = 0.2):
@@ -38,7 +42,7 @@ def temporal_split(df: pd.DataFrame, test_fraction: float = 0.2):
 
 @st.cache_resource
 def fit_popularity(min_votes: int, top_n: int):
-    movie_features, _, movies = load_data()
+    movie_features, movies = load_movies_and_features()
     model = PopularityRecommender(min_votes=min_votes, top_n=top_n)
     model.fit(movie_features, movies)
     return model
@@ -46,7 +50,8 @@ def fit_popularity(min_votes: int, top_n: int):
 
 @st.cache_resource
 def fit_svd(n_factors: int):
-    _, interactions, movies = load_data()
+    interactions = load_interactions()
+    _, movies = load_movies_and_features()
     train_df, test_df = temporal_split(interactions)
     model = SVDCollaborativeFiltering(n_factors=n_factors, random_state=42)
     model.fit(train_df)
@@ -56,7 +61,8 @@ def fit_svd(n_factors: int):
 
 @st.cache_resource
 def fit_sgd(n_factors: int, lr: float, reg: float, epochs: int):
-    _, interactions, movies = load_data()
+    interactions = load_interactions()
+    _, movies = load_movies_and_features()
     train_df, test_df = temporal_split(interactions)
     model = SGDMatrixFactorization(
         n_factors=n_factors,
@@ -83,8 +89,6 @@ def load_content_assets():
 
 
 st.title("🎬 Explainable Recsys — Multi-Model Demo")
-
-movie_features_df, interactions_df, movies_df = load_data()
 
 model_options = ["Popularity", "Content-Based (Embeddings)"]
 if not LIGHT_MODE:
