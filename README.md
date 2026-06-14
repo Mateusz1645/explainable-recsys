@@ -92,13 +92,22 @@ ruff format .
 │   ├── raw/
 │   └── processed/
 ├── notebooks/
+│   ├── 01_eda.ipynb
+│   ├── 02_feature_engineering.ipynb
+│   ├── 03_content_based_filtering_embeddings.ipynb
+│   ├── 04_collaborative_filtering.ipynb
+│   ├── 05_interpretability.ipynb
+│   └── 06_final_report.ipynb
 ├── scripts/
+│   ├── run_experiments.py
+│   └── test_all_models.py
 ├── src/
 │   ├── content_based/
 │   ├── eda/
 │   ├── features/
 │   └── models/
 ├── tests/
+├── app_streamlit.py
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── pyproject.toml
@@ -260,6 +269,61 @@ Main experiment runner:
 ```bash
 python scripts/run_experiments.py
 ```
+
+## Streamlit Demo
+
+Run the live multi-model demo:
+
+```bash
+python -m streamlit run app_streamlit.py
+```
+
+The demo includes:
+
+- Popularity Recommender
+- SVD Collaborative Filtering
+- SGD Matrix Factorization
+- Content-Based Recommendations (if embedding assets are available)
+
+## MLOps: Model Registry, Monitoring, and Model Tests
+
+### 1. Test All Models
+
+Run tests for all available models:
+
+```bash
+python scripts/test_all_models.py --model all
+```
+
+You can also test a single model:
+
+```bash
+python scripts/test_all_models.py --model popularity
+python scripts/test_all_models.py --model svd
+python scripts/test_all_models.py --model sgd
+python scripts/test_all_models.py --model content
+```
+
+### 2. Run MLflow UI
+
+Start the MLflow tracking server:
+
+```bash
+mlflow ui
+```
+
+Then open:
+
+```text
+http://localhost:5000
+```
+
+### 3. What Is Tracked
+
+- Model training and evaluation metrics (RMSE, MAE, etc.)
+- Experiment parameters (e.g., factors, learning rate, regularization)
+- Model test status across available recommenders
+- Monitoring signals (when logged), including basic drift indicators and model artifacts
 
 ## Tests
 

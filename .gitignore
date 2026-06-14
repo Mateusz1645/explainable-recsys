@@ -15,3 +15,7 @@ __pycache__/
 Thumbs.db
 /.venv
 notebooks/test.ipynb
+
+# Mlflow
+*mlflow.db
+*mlruns
