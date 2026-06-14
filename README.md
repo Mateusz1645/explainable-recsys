@@ -456,3 +456,13 @@ When contributing:
 - update tests or notebooks when relevant
 - document new scripts or workflows
 - prefer clarity over cleverness
+
+## References
+
+1. Koren, Y., Bell, R., & Volinsky, C. (2009). Matrix Factorization Techniques for Recommender Systems. *Computer*, 42(8), 30–37.  
+2. Ricci, F., Rokach, L., & Shapira, B. (Eds.). (2015). *Recommender Systems Handbook* (2nd ed.). Springer.  
+3. Lundberg, S. M., & Lee, S.-I. (2017). A Unified Approach to Interpreting Model Predictions. *NeurIPS 2017*.  
+4. Ribeiro, M. T., Singh, S., & Guestrin, C. (2016). “Why Should I Trust You?” Explaining the Predictions of Any Classifier. *KDD 2016*.  
+5. Gunawardana, A., & Shani, G. (2015). Evaluating Recommender Systems. In *Recommender Systems Handbook* (2nd ed.). Springer.  
+6. Harper, F. M., & Konstan, J. A. (2015). The MovieLens Datasets: History and Context. *ACM Transactions on Interactive Intelligent Systems (TIIS)*, 5(4), 1–19.  
+7. Zaharia, M., Chen, A., Davidson, A., et al. (2018). Accelerating the Machine Learning Lifecycle with MLflow. *IEEE Data Engineering Bulletin*, 41(4), 39–45.  
