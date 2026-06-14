@@ -30,8 +30,22 @@ def load_movies_and_features():
 
 
 @st.cache_data
-def load_interactions():
-    return pd.read_parquet(DATA_DIR / "processed" / "interaction_features.parquet")
+def load_interactions(max_rows: int = 250_000):
+    cols = ["userID", "movieID", "interaction_rating", "timestamp"]
+    df = pd.read_parquet(
+        DATA_DIR / "processed" / "interaction_features.parquet",
+        columns=cols,
+    )
+
+    df["userID"] = pd.to_numeric(df["userID"], downcast="integer")
+    df["movieID"] = pd.to_numeric(df["movieID"], downcast="integer")
+    df["interaction_rating"] = pd.to_numeric(df["interaction_rating"], downcast="float")
+    df["timestamp"] = pd.to_numeric(df["timestamp"], downcast="integer")
+
+    if len(df) > max_rows:
+        df = df.sort_values("timestamp").tail(max_rows).reset_index(drop=True)
+
+    return df
 
 
 def temporal_split(df: pd.DataFrame, test_fraction: float = 0.2):
@@ -50,7 +64,7 @@ def fit_popularity(min_votes: int, top_n: int):
 
 @st.cache_resource
 def fit_svd(n_factors: int):
-    interactions = load_interactions()
+    interactions = load_interactions(max_rows=200_000)
     _, movies = load_movies_and_features()
     train_df, test_df = temporal_split(interactions)
     model = SVDCollaborativeFiltering(n_factors=n_factors, random_state=42)
@@ -61,7 +75,7 @@ def fit_svd(n_factors: int):
 
 @st.cache_resource
 def fit_sgd(n_factors: int, lr: float, reg: float, epochs: int):
-    interactions = load_interactions()
+    interactions = load_interactions(max_rows=200_000)
     _, movies = load_movies_and_features()
     train_df, test_df = temporal_split(interactions)
     model = SGDMatrixFactorization(
