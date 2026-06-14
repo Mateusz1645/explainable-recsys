@@ -30,18 +30,24 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Lowercase repository
+        id: prep
+        run: echo "repo_lc=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/explainable-recsys-demo:latest
-            ghcr.io/${{ github.repository }}/explainable-recsys-demo:${{ github.sha }}
+            ghcr.io/${{ steps.prep.outputs.repo_lc }}/explainable-recsys-demo:latest
+            ghcr.io/${{ steps.prep.outputs.repo_lc }}/explainable-recsys-demo:${{ github.sha }}
 
   deploy_render:
     needs: build_image
