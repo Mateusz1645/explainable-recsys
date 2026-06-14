@@ -385,6 +385,27 @@ In Render service settings, add:
 
 If you want to run all models in production, set `LIGHT_MODE=false` and use a larger instance.
 
+## Pretraining and Saving Collaborative Models
+
+Use this script to train SVD and SGD models locally and save the resulting artifacts:
+
+```bash
+python scripts/train_and_save_models.py
+```
+
+The script generates:
+
+- `artifacts/svd_model.pkl`
+- `artifacts/sgd_model.pkl`
+- `artifacts/model_metrics.json`
+
+These artifacts are intended for local use and are not committed to the repository.
+
+> **Note**
+>
+> If `LIGHT_MODE=false`, the Streamlit app expects pre-trained artifacts to be available in the `artifacts/` directory.
+> If the required files are missing, the application will display an error message with the command needed to generate them.
+
 ## Tests
 
 The repository includes tests for:
