@@ -88,6 +88,10 @@ ruff format .
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       ├── ruff.yml
+│       └── ci_cd_deploy.yml
 ├── data/
 │   ├── raw/
 │   └── processed/
@@ -108,6 +112,7 @@ ruff format .
 │   └── models/
 ├── tests/
 ├── app_streamlit.py
+├── Dockerfile
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── pyproject.toml
@@ -324,6 +329,42 @@ http://localhost:5000
 - Experiment parameters (e.g., factors, learning rate, regularization)
 - Model test status across available recommenders
 - Monitoring signals (when logged), including basic drift indicators and model artifacts
+
+## Docker
+
+Build the Docker image:
+
+```bash
+docker build -t explainable-recsys-demo .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 8501:8501 explainable-recsys-demo
+```
+
+Open the app in your browser:
+
+```text
+http://localhost:8501
+```
+
+## CI/CD
+
+The GitHub Actions workflow is configured to:
+
+- Run linting and tests on pull requests and pushes to `main`
+- Build and push a Docker image to GitHub Container Registry (GHCR) on pushes to `main`
+- Optionally trigger automatic deployment on Render
+
+To enable Render auto-deploy, add this repository secret in GitHub:
+
+```text
+RENDER_DEPLOY_HOOK_URL
+```
+
+Your Render Deploy Hook URL should be stored as the value of this secret.
 
 ## Tests
 
