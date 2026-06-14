@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,8 @@ import streamlit as st
 from src.content_based.recommender import build_title_to_index, get_recommendations
 from src.models.collaborative_filtering.collaborative_filtering import SGDMatrixFactorization, SVDCollaborativeFiltering
 from src.models.popularity_recommender.popularity_recommender import PopularityRecommender
+
+LIGHT_MODE = os.getenv("LIGHT_MODE", "true").lower() == "true"
 
 st.set_page_config(page_title="Explainable Recsys Demo", page_icon="🎬", layout="wide")
 
@@ -83,11 +86,11 @@ st.title("🎬 Explainable Recsys — Multi-Model Demo")
 
 movie_features_df, interactions_df, movies_df = load_data()
 
-model_type = st.selectbox(
-    "Select model",
-    ["Popularity", "SVD Collaborative Filtering", "SGD Matrix Factorization", "Content-Based (Embeddings)"],
-)
+model_options = ["Popularity", "Content-Based (Embeddings)"]
+if not LIGHT_MODE:
+    model_options = ["Popularity", "SVD Collaborative Filtering", "SGD Matrix Factorization", "Content-Based (Embeddings)"]
 
+model_type = st.selectbox("Select model", model_options)
 top_n = st.slider("Top N", 5, 20, 10, 1)
 
 if model_type == "Popularity":
@@ -106,6 +109,10 @@ if model_type == "Popularity":
     st.info("Explanation: ranking based on IMDb-style weighted rating (R, v, m, C).")
 
 elif model_type == "SVD Collaborative Filtering":
+    if LIGHT_MODE:
+        st.error("This model is disabled in cloud LIGHT_MODE due to memory limits.")
+        st.stop()
+
     n_factors = st.slider("n_factors", 20, 150, 50, 10)
     model, train_df, movies_meta, metrics = fit_svd(n_factors=n_factors)
 
@@ -120,6 +127,10 @@ elif model_type == "SVD Collaborative Filtering":
     st.info("Explanation: recommendations are based on latent factors (user-item matrix decomposition).")
 
 elif model_type == "SGD Matrix Factorization":
+    if LIGHT_MODE:
+        st.error("This model is disabled in cloud LIGHT_MODE due to memory limits.")
+        st.stop()
+
     n_factors = st.slider("n_factors", 20, 150, 50, 10)
     lr = st.slider("learning_rate", 0.001, 0.02, 0.005, 0.001)
     reg = st.slider("regularization", 0.001, 0.1, 0.02, 0.001)
