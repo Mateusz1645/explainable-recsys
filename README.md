@@ -366,6 +366,25 @@ RENDER_DEPLOY_HOOK_URL
 
 Your Render Deploy Hook URL should be stored as the value of this secret.
 
+## Cloud Memory Mode (Render)
+
+The app supports a lightweight cloud mode controlled by the `LIGHT_MODE` environment variable.
+
+- `LIGHT_MODE=true` (recommended on free/small instances)  
+  Enables only lightweight models in the UI (Popularity + Content-Based).
+
+- `LIGHT_MODE=false`  
+  Enables all models in the UI, including SVD and SGD (requires more RAM/CPU).
+
+### Render setup
+
+In Render service settings, add:
+
+- Key: `LIGHT_MODE`
+- Value: `true` (or `false` for full mode)
+
+If you want to run all models in production, set `LIGHT_MODE=false` and use a larger instance.
+
 ## Tests
 
 The repository includes tests for:
