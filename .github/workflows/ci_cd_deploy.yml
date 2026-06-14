@@ -46,6 +46,10 @@ jobs:
   deploy_render:
     needs: build_image
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && secrets.RENDER_DEPLOY_HOOK_URL != ''
+    if: github.event_name == 'push'
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
     steps:
-      - run: curl --fail --show-error --silent -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Trigger Render deploy hook
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        run: curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL"
